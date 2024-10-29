@@ -12,28 +12,33 @@ public class Numbers : MonoBehaviour
     public Sprite[] nums_st;
     public int num = -1;
     public int[] pos = new int[] { -9, 0 };
-
+    private Vector3 tarScale = new Vector3(1, 1, 1);
     private const float MoveAniDuration = 0.5f;
     private float startTime;
+    private float scaleStartTime;
     
     void Start()
     {
+        transform.localScale = new Vector3(0, 0, 0);
         _sr = gameObject.GetComponent<SpriteRenderer>();
         while (num == -1 && pos[0] != -9) {;}
         
-        startTime = Time.time;
+        startTime = Time.time; scaleStartTime = Time.time;
         gameObject.transform.position = new Vector2(Unitmov[pos[0]], Unitmov[3-pos[1]]);
-        //Debug.Log((int)Math.Log(num, 2) - 1);
         _sr.sprite = nums_st[(int)Math.Log(num, 2) - 1];
         Camera.OnMoveUp.AddListener(Move);
         OnDoubleNum.AddListener(DoubleNum);
+        NewGameButton.newGame.AddListener(newGame);
     }
 
     void Update()
     {
         float progress = (Time.time - startTime) / MoveAniDuration;
+        float scaleProgress = (Time.time - scaleStartTime) / MoveAniDuration;
         transform.position =
             Vector2.Lerp(transform.position, new Vector2(Unitmov[pos[0]], Unitmov[3 - pos[1]]), progress);
+        transform.localScale =
+            Vector3.Lerp(transform.localScale, tarScale, scaleProgress);
         if (progress >= 1f)
         {
             transform.position = new Vector2(Unitmov[pos[0]], Unitmov[3 - pos[1]]);
@@ -68,6 +73,8 @@ public class Numbers : MonoBehaviour
     {
         if (pos[0] == args[0] && pos[1] == args[1])
         {
+            scaleStartTime = Time.time;
+            transform.localScale = new Vector3(0, 0, 0);
             num *= 2;
             _sr.sprite = nums_st[(int)Math.Log(num, 2) - 1];
         }
@@ -80,8 +87,14 @@ public class Numbers : MonoBehaviour
     /// <returns></returns>
     IEnumerator DelayedDestroy(int x, int y)
     {
-        yield return new WaitForSeconds(0.1f); 
+        yield return new WaitForSeconds(0.08f); 
         OnDoubleNum.Invoke(new[] { x, y});
+        Camera.Score += num;
+        Destroy(gameObject);
+    }
+
+    private void newGame()
+    {
         Destroy(gameObject);
     }
 }
