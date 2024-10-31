@@ -15,16 +15,24 @@ public class GreedyAiButton : MonoBehaviour
     
     void Update()
     {
-        
+        if (Input.GetKeyDown(KeyCode.I))
+        {
+            OnMouseDown();
+            _sr.color = new Color(0.5490196f, 0.5137255f, 0.5137255f, 0.5f);
+        }
+        else if(Input.GetKeyUp(KeyCode.I))
+        {
+            _sr.color = new Color(0.5490196f, 0.5137255f, 0.5137255f, 1);
+        }
     }
     private void OnMouseEnter()
     {
-        _sr.color = new Color(1, 1, 1, 0.5f);
+        _sr.color = new Color(0.5490196f, 0.5137255f, 0.5137255f, 0.5f);
     }
 
     private void OnMouseExit()
     {
-        _sr.color = new Color(1, 1, 1, 1);
+        _sr.color = new Color(0.5490196f, 0.5137255f, 0.5137255f, 1);
     }
     
     private void OnMouseDown()

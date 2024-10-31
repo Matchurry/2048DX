@@ -19,7 +19,6 @@ public class Numbers : MonoBehaviour
     
     void Start()
     {
-        transform.localScale = new Vector3(0, 0, 0);
         _sr = gameObject.GetComponent<SpriteRenderer>();
         while (num == -1 && pos[0] != -9) {;}
         
@@ -29,6 +28,7 @@ public class Numbers : MonoBehaviour
         Camera.OnMoveUp.AddListener(Move);
         OnDoubleNum.AddListener(DoubleNum);
         NewGameButton.newGame.AddListener(newGame);
+        Revocate.revocate.AddListener(newGame);
     }
 
     void Update()
@@ -73,9 +73,11 @@ public class Numbers : MonoBehaviour
     {
         if (pos[0] == args[0] && pos[1] == args[1])
         {
+            Camera.combined[args[0], args[1]] = true;
             scaleStartTime = Time.time;
             transform.localScale = new Vector3(0, 0, 0);
             num *= 2;
+            if (num == 2048) Camera.winRounds++;
             _sr.sprite = nums_st[(int)Math.Log(num, 2) - 1];
         }
     }

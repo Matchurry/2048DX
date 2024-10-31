@@ -9,7 +9,7 @@ public class GreedyAiButtonText : MonoBehaviour
     private const float MoveAniDuration = 0.5f;
     private float startTime = 0f;
     private float Opa_startTime = 0f;
-    private Color tarColor = new Color(0, 0, 0, 0.5f);
+    private Color tarColor = new Color(1, 1, 1, 0.5f);
     private Vector3 inipos;
     private Vector3 tarpos;
     private TextMeshProUGUI _tm;
