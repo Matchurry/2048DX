@@ -2,8 +2,10 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Runtime.InteropServices.WindowsRuntime;
 using Unity.Mathematics;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.Serialization;
@@ -13,6 +15,27 @@ using Random = UnityEngine.Random;
 
 public class Camera : MonoBehaviour
 {
+    public class DecisionValues
+    {
+        public int GetScores; //该决策下获取的分数
+        public int CombineTimes; //该决策下合并方块数*系数
+        public int Chaos; //该决策下减少的局面混乱度*系数
+        public char step; //用于记录是何种决策
+
+        public DecisionValues(int a, int b, int c, char d)
+        {
+            GetScores = a;
+            CombineTimes = b;
+            Chaos = c;
+            step = d;
+        }
+        public int SumValues()
+        {
+            return GetScores + CombineTimes + Chaos;
+        }
+    
+}
+    
     [FormerlySerializedAs("can_move")] public bool canMove = false;
     public static readonly UnityEvent<int> OnSummonNewNum = new UnityEvent<int>();
     public static readonly UnityEvent<int[]> OnMoveUp = new UnityEvent<int[]>();
@@ -32,10 +55,12 @@ public class Camera : MonoBehaviour
 
     public static int wholeRounds = 0;
     public static int winRounds = 0;
-    //用于存储自动游戏存储决策
+    // 用于存储自动决策协程给出的最终决策
     private char AiDeci = 'n'; 
-    // 用于判断是否正在计算 MiniMaxDecision_Launch
+    // 用于判断自动决策协程是否正在计算
     private bool isCalculating = false;
+
+    public static double[] ratiosSum = new double[3];
 
     private void Awake()
     {
@@ -47,7 +72,7 @@ public class Camera : MonoBehaviour
         OnSummonNewNum.AddListener(SummonNum);
         NewGameButton.newGame.AddListener(newGame);
         Revocate.revocate.AddListener(revocate);
-        NewGameButton.endGame.AddListener(AutoNewGame);
+        //NewGameButton.endGame.AddListener(AutoNewGame);
         newGame();
     }
     void Update()
@@ -111,7 +136,11 @@ public class Camera : MonoBehaviour
     
     private IEnumerator CalculateMiniMaxDecision(int[,] m)
     {
-        AiDeci = controls[MiniMaxDecision_Launch(m)];
+        var aiDecision = MiniMaxDecision_Launch(m);
+        AiDeci = aiDecision.step;
+        ratiosSum[0] += aiDecision.GetScores;
+        ratiosSum[1] += aiDecision.CombineTimes;
+        ratiosSum[2] += aiDecision.Chaos;
         isCalculating = false; 
         yield return null;
     }
@@ -622,6 +651,145 @@ public class Camera : MonoBehaviour
         return cal;
     }
     
+    /// <summary>
+    /// 这个函数返回执行操作前后的局面混乱值
+    /// </summary>
+    /// <param name="c">操作字符</param>
+    /// <param name="_m">传入map</param>
+    /// <param name="mapped">是否影响传入的map</param>
+    /// <returns></returns>
+    int[] StabilityCalPredict(char c, int[,] _m, bool mapped)
+    {
+        var m = new int[4,4];
+        if (!mapped)
+        {
+            for(var i=0; i<4; i++)
+                for (var j = 0; j < 4; j++)
+                    m[i, j] = _m[i, j];
+        }
+        else m = _m;
+
+        var cal = new int[2];
+        cal[0] = StabilityCal(m);
+        switch (c)
+        {
+            case 'w':
+                if (!can_W()) break;
+                for (var i = 0; i < 4; i++)
+                    for (var j = 1; j < 4; j++)
+                    {
+                        if (m[i,j] == 0) continue;
+                        var tar = j;
+                        while (tar - 1 >= 0 && (m[i,tar - 1] == 0 || m[i,tar - 1] == m[i,j]))  tar--;
+                        if(tar==j) continue;
+                        if (m[i,tar] == 0)
+                            m[i,tar] = m[i,j];
+                        else
+                            m[i,tar] *= 2;
+                        m[i,j] = 0;
+                    }
+                break;
+            case 'a':
+                if (!can_A()) break;
+                for (var j = 0; j < 4; j++)
+                    for (var i = 1; i < 4; i++)
+                    {
+                        if (m[i,j] == 0) continue;
+                        var tar = i;
+                        while (tar - 1 >= 0 && (m[tar-1,j] == 0 || m[tar-1,j] == m[i,j]))  tar--;
+                        if(tar==i) continue;
+                        if (m[tar,j] == 0)
+                            m[tar,j] = m[i,j];
+                        else
+                            m[tar,j] *= 2;
+                        m[i,j] = 0;
+                    }
+                break;
+            case 's':
+                if (!can_S()) break;
+                for (var i = 0; i < 4; i++)
+                    for (var j = 3; j >= 0 ; j--)
+                    {
+                        if (m[i,j] == 0) continue;
+                        var tar = j;
+                        while (tar + 1 < 4 && (m[i,tar + 1] == 0 || m[i,tar + 1] == m[i,j]))  tar++;
+                        if(tar==j) continue;
+                        if (m[i,tar] == 0)
+                            m[i,tar] = m[i,j];
+                        else
+                            m[i,tar] *= 2;
+                        m[i,j] = 0;
+                    }
+                break;
+            case 'd':
+                if (!can_D()) break;
+                for (var j = 0; j < 4; j++)
+                    for (var i = 3; i >= 0; i--)
+                    {
+                        if (m[i,j] == 0) continue;
+                        var tar = i;
+                        while (tar + 1 < 4 && (m[tar+1,j] == 0 || m[tar+1,j] == m[i,j]))  tar++;
+                        if(tar==i) continue;
+                        if (m[tar,j] == 0)
+                            m[tar,j] = m[i,j];
+                        else
+                            m[tar,j] *= 2;
+                        m[i,j] = 0;
+                    }
+                break;
+        }
+        cal[1] = StabilityCal(m);
+        return cal;
+    }
+    
+    /// <summary>
+    /// 返回接受的map的局面稳定评分 不改变传入的map
+    /// </summary>
+    /// <param name="_m"></param>
+    /// <returns></returns>
+    public static int StabilityCal(int[,] _m)
+    {
+        var m = new int[4, 4];
+        var count = new bool[4, 4];
+        var cal = 0;
+        for (var i = 0; i < 4; i++)
+            for (var j = 0; j < 4; j++)
+            {
+                count[i, j] = false;
+                if (_m[i, j] == 0) m[i, j] = 0;
+                else m[i, j] = (int)Math.Log(_m[i, j], 2); //这里已经做了指数变换  
+            }
+        
+        // 遍历每一个格子 如果能够找到从格子出发的某个方向保持指数递减或不变 则每多延伸出一格这样的规律稳定值+1
+        // 已经获得稳定分数的格子不给分 得分的格子还要乘上自身的指数
+        // 空位没有得分 指数在2及以下的没有得分
+        var steps_i = new int[] { -1, 0, 1, 0 };
+        var steps_j = new int[] { 0, 1, 0, -1 };
+        for (var i = 0; i < 4; i++)
+            for (var j = 0; j < 4; j++)
+            {
+                //遍历上下左右 如果是递减的 则自身和对应格子标记为可得分
+                for (var k = 0; k < 4; k++)
+                {
+                    var move_i = i + steps_i[k];
+                    var move_j = j + steps_j[k];
+                    if (move_i >= 0 && move_i < 4 && move_j >= 0 && move_j < 4
+                        && m[move_i, move_j] > 2 && m[i, j] >= m[move_i, move_j] && m[i, j] - m[move_i, move_j] <= 1)
+                    {
+                        count[i, j] = true;
+                        count[move_i, move_j] = true;
+                    }
+                }
+            }
+        //保证一个场面分 在其基础上追加稳定分
+        for (var i = 0; i < 4; i++)
+            for (var j = 0; j < 4; j++)
+                if (count[i, j])
+                    cal += m[i, j] * 2;
+                else cal += Mathf.Max(m[i, j] - 2, 0);
+        return cal;
+    }
+    
     IEnumerator NextTurn()
     {
         round++;
@@ -632,7 +800,7 @@ public class Camera : MonoBehaviour
     }
     
     /// <summary>
-    /// 基于贪心思想的AI决策
+    /// 基于贪心思想的求解决策
     /// </summary>
     /// <returns>返回0，1，2，3表示wasd：上左下右</returns>
     private int GreedyDecision()
@@ -656,29 +824,29 @@ public class Camera : MonoBehaviour
         return control;
     }
 
-    private int MiniMaxDecision_Launch(int[,] nowMap)
+    private DecisionValues MiniMaxDecision_Launch(int[,] nowMap)
     {
         var _map = new int[4, 4];
         for(var i=0; i<4; i++)
             for (var j = 0; j < 4; j++)
                 _map[i,j] = nowMap[i, j];
         
-        var pre = new int[4] {MiniMaxDecision(_map, 0, 'w', 0),
-            MiniMaxDecision(_map, 0, 'a', 0),
-            MiniMaxDecision(_map, 0, 's', 0),
-            MiniMaxDecision(_map, 0, 'd', 0)};
+        var pre = new DecisionValues[4] {MiniMaxDecision(_map, new DecisionValues(0,0,0,'w'), 'w', 0),
+            MiniMaxDecision(_map, new DecisionValues(0,0,0,'a'), 'a', 0),
+            MiniMaxDecision(_map, new DecisionValues(0,0,0,'s'), 's', 0),
+            MiniMaxDecision(_map, new DecisionValues(0,0,0,'d'), 'd', 0)};
         var max = 0;
         var maxIndex = 0;
         for (var i = 0; i < 4; i++)
         {
             if (!can_X(controls[i])) continue;
-            if (pre[i] >= max)
+            if (pre[i].SumValues() >= max)
             {
-                max = pre[i];
+                max = pre[i].SumValues();
                 maxIndex = i;
             }
         }
-        return maxIndex;
+        return pre[maxIndex];
     }
     
     /// <summary>
@@ -689,9 +857,10 @@ public class Camera : MonoBehaviour
     /// <param name="dir">即将进行的模拟方向</param>
     /// <param name="depth">当前递归深度</param>
     /// <returns></returns>
-    private int MiniMaxDecision(int[,] nowMap, int nowScore, char dir, int depth)
+    private DecisionValues MiniMaxDecision(int[,] nowMap, DecisionValues nowScore, char dir, int depth)
     {
-        if (depth == 7) return nowScore; //如果已经达到了第x层递归则结束 建议5-6
+        if (depth == 6)
+            return nowScore; //如果已经达到了第x层递归则结束 建议5-6
         if (!can_X(dir, nowMap)) return nowScore; //如果这个方向无法移动则剪枝
         var m = new int[4,4];
         var zerosCount = 0;
@@ -701,20 +870,24 @@ public class Camera : MonoBehaviour
                 m[i, j] = nowMap[i, j];
                 if (m[i, j] == 0) zerosCount++;
             }
-
-        //模拟当前方向的情况 改变map
-        //评价移动得分的体系为：预计在接下来的递归中 能够合成的方块数*空格比例因子+得分；
-        //空格越少时，能够合成的方块越多，这个策略约好。
-        var ratio = (int)Mathf.Pow(2, Mathf.Max(8,Mathf.Min(0,8 - zerosCount)));
-        nowScore += CombineCalPredict(dir, m, true)*ratio + ScoreCalPredict(dir, m, false);
+        
+        // 对于合并产生的分数 自然是空位越多的时候进行合并 以尽量保持一个局面的干净
+        // 以下为最初的启发式构想
+        var ratio_zeros = (int)Mathf.Pow(2,Mathf.Max(12,zerosCount));
+        var ratio_antizeros = (int)Mathf.Pow(2, Mathf.Min(16 - zerosCount,12));
+        
+        nowScore.CombineTimes += CombineCalPredict(dir, m, false) * ratio_zeros;
+        nowScore.GetScores += ScoreCalPredict(dir, m, true) * ratio_zeros; //最后一次计算的时候改变map
+        nowScore.Chaos += StabilityCal(m)/15 * ratio_zeros;
+        
         //然后开启新的一轮
         SummonNumForSim(1, m);
 
-        var bestValue = int.MinValue;
+        var bestValue = nowScore;
         foreach (var move in controls)
         {
             var value = MiniMaxDecision(m, nowScore, move, depth + 1);
-            bestValue = Math.Max(bestValue, value);
+            if (value.SumValues() >= nowScore.SumValues()) bestValue = value;
         }
         return bestValue;
     }
