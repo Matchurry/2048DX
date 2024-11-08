@@ -45,7 +45,7 @@
   
 
 <div align=center>
-  <img src="Assets\GiFs\preview.gif">
+  <img src="https://github.com/Matchurry/2048DX/blob/main/Assets/GIFs/preview.gif">
 </div>
 
 
@@ -54,7 +54,7 @@
 - 特别追加：自由自动求解、删除指定数字块、移动数字块。
   
 <div align=center>
-  <img src="Assets\GiFs\functions.gif">
+  <img src="https://github.com/Matchurry/2048DX/blob/main/Assets/GIFs/functions.gif">
 </div>
 
 游戏全程无声音，震动可关，只为保障一个良好的摸鱼环境（x
@@ -81,6 +81,6 @@
 
 ## :recycle: 再现
 
-您可以从[包页面](https://github.com/Matchurry/2048DX/releases)下载本游戏1.1版本的Android平台下的Unity资源包以供在自己的设备上再现游戏。
+您可以从[发布页面](https://github.com/Matchurry/2048DX/releases)下载本游戏1.1版本的Android平台下的Unity资源包以供在自己的设备上再现游戏。
 > [!NOTE]
 > 请注意Unity版本为`2021.3.29f1c1`
