@@ -9,35 +9,55 @@ public class NewGameButton : MonoBehaviour
 {
     public static readonly UnityEvent newGame = new UnityEvent();
     public static readonly UnityEvent endGame = new UnityEvent();
+    private Vector3 inipos;
+    private Vector3 tarpos;
+    private float tarR_Y = 0;
     private SpriteRenderer _sr;
     void Start()
     {
+        inipos = transform.position;
+        tarpos = inipos;
         _sr = gameObject.GetComponent<SpriteRenderer>();
+        GreedyAiButton.greedyAiAct.AddListener(HandbleAiAct);
+        GreedyAiButton.greedyAiDeA.AddListener(HandleAiDeAct);
+        newGame.AddListener(newGameAni);
+        Destory.OnEndDestory.AddListener(OnMouseUp);
+        Drag.OnEndDrag.AddListener(OnMouseUp);
     }
     void Update()
     {
-        if (Input.GetKeyDown(KeyCode.R))
-        {
-            OnMouseDown();
+        transform.rotation = Quaternion.Euler(0, Mathf.Lerp(transform.rotation.eulerAngles.y, tarR_Y, 0.05f), 0);
+        transform.position = Vector3.Lerp(transform.position, tarpos, 0.1f);
+        if(Destory.IsDestroying || Drag.IsDraging)
             _sr.color = new Color(0.5490196f, 0.5137255f, 0.5137255f, 0.5f);
-        }
-        else if(Input.GetKeyUp(KeyCode.R))
-        {
-            _sr.color = new Color(0.5490196f, 0.5137255f, 0.5137255f, 1);
-        }
-    }
-    private void OnMouseEnter()
-    {
-        _sr.color = new Color(0.5490196f, 0.5137255f, 0.5137255f, 0.5f);
     }
 
-    private void OnMouseExit()
+    void HandbleAiAct()
     {
-        _sr.color = new Color(0.5490196f, 0.5137255f, 0.5137255f, 1);
+        tarpos = new Vector3(inipos.x - 1.2f, inipos.y, inipos.z);
+    }
+
+    void HandleAiDeAct()
+    {
+        tarpos = inipos;
     }
 
     private void OnMouseDown()
     {
-        newGame.Invoke();
+        _sr.color = new Color(0.5490196f, 0.5137255f, 0.5137255f, 0.5f);
+        if(!Destory.IsDestroying && !Drag.IsDraging)
+            newGame.Invoke();
+    }
+
+    private void OnMouseUp()
+    {
+        _sr.color = new Color(0.5490196f, 0.5137255f, 0.5137255f, 1);
+    }
+
+    private void newGameAni()
+    {
+        transform.rotation = new Quaternion(0, 0, 0,0);
+        tarR_Y = 359f;
+        //StartCoroutine(newGameAniIE());
     }
 }

@@ -12,10 +12,11 @@ using UnityEngine.Serialization;
 using UnityEngine.SocialPlatforms;
 using UnityEngine.UIElements;
 using Random = UnityEngine.Random;
+using Lofelt.NiceVibrations;
 
 public class Camera : MonoBehaviour
 {
-    public class DecisionValues
+    private class DecisionValues
     {
         public int GetScores; //该决策下获取的分数
         public int CombineTimes; //该决策下合并方块数*系数
@@ -43,6 +44,7 @@ public class Camera : MonoBehaviour
     public static readonly UnityEvent<int[]> OnMoveDown = new UnityEvent<int[]>();
     public static readonly UnityEvent<int[]> OnMoveRight = new UnityEvent<int[]>();
     public GameObject num;
+    public Transform bg;
     public static int[,] map = new int[4, 4];
     public static int[,] oldmap = new int[4, 4];
     public static bool[,] combined = new bool[4, 4];
@@ -59,53 +61,36 @@ public class Camera : MonoBehaviour
     private char AiDeci = 'n'; 
     // 用于判断自动决策协程是否正在计算
     private bool isCalculating = false;
-
+    private bool isSaved = false;
     public static double[] ratiosSum = new double[3];
 
     private void Awake()
     {
-        Screen.SetResolution(1920, 1080, false);
+        HighestScore = PlayerPrefs.GetInt("highscore");
+        for(var i=0; i<4; i++)
+            for (var j = 0; j < 4; j++)
+            {
+                oldmap[i, j] = PlayerPrefs.GetInt((i * 4 + j).ToString());
+                if (oldmap[i, j] != 0) isSaved = true;
+            }
+        old_score = PlayerPrefs.GetInt("oldscore");
     }
 
     void Start()
     {
+        Application.targetFrameRate = 120;
+        QualitySettings.vSyncCount = 1;
         OnSummonNewNum.AddListener(SummonNum);
-        NewGameButton.newGame.AddListener(newGame);
+        NewGameButton.newGame.AddListener(DelayedNewGame);
         Revocate.revocate.AddListener(revocate);
-        //NewGameButton.endGame.AddListener(AutoNewGame);
-        newGame();
+        SwipeDetector.OnTouchInput.AddListener(handletouch);
+        if (isSaved) revocate();
+        else newGame();
     }
     void Update()
     {
         if (isCalculating) return;
         HighestScore = Math.Max(Score, HighestScore);
-        if (canMove && !is_AIControl)
-        {
-            if (Input.GetKeyDown(KeyCode.W) || Input.GetKeyDown(KeyCode.UpArrow) && can_W())
-            {
-                Move('w');
-                canMove = false;
-                StartCoroutine(NextTurn());
-            }
-            else if (Input.GetKeyDown(KeyCode.A) || Input.GetKeyDown(KeyCode.LeftArrow) && can_A())
-            {
-                Move('a');
-                canMove = false;
-                StartCoroutine(NextTurn());
-            }
-            else if (Input.GetKeyDown(KeyCode.S) || Input.GetKeyDown(KeyCode.DownArrow) && can_S())
-            {
-                Move('s');
-                canMove = false;
-                StartCoroutine(NextTurn());
-            }
-            else if (Input.GetKeyDown(KeyCode.D) || Input.GetKeyDown(KeyCode.RightArrow) && can_D())
-            {
-                Move('d');
-                canMove = false;
-                StartCoroutine(NextTurn());
-            }
-        }
 
         if (canMove && is_AIControl && !isCalculating)
         {
@@ -130,8 +115,48 @@ public class Camera : MonoBehaviour
             for (var j = 0; j < 4; j++)
                 if (map[i, j] == 0)
                     cnt++;
-        if (cnt == 16) return;
+        if (cnt != 0) return;
         NewGameButton.endGame.Invoke();
+    }
+
+    private void handletouch(char c)
+    {
+        if (canMove && !is_AIControl)
+        {
+            OnApplicationQuit();
+            if (c=='w' && can_W())
+            {
+                if(Shake.can_shake)
+                    HapticPatterns.PlayPreset(HapticPatterns.PresetType.LightImpact);
+                Move('w');
+                canMove = false;
+                StartCoroutine(NextTurn());
+            }
+            else if (c=='a' && can_A())
+            {
+                if(Shake.can_shake)
+                    HapticPatterns.PlayPreset(HapticPatterns.PresetType.LightImpact);
+                Move('a');
+                canMove = false;
+                StartCoroutine(NextTurn());
+            }
+            else if (c=='s' && can_S())
+            {
+                if(Shake.can_shake)
+                    HapticPatterns.PlayPreset(HapticPatterns.PresetType.LightImpact);
+                Move('s');
+                canMove = false;
+                StartCoroutine(NextTurn());
+            }
+            else if (c=='d' && can_D())
+            {
+                if(Shake.can_shake)
+                    HapticPatterns.PlayPreset(HapticPatterns.PresetType.LightImpact);
+                Move('d');
+                canMove = false;
+                StartCoroutine(NextTurn());
+            }
+        }
     }
     
     private IEnumerator CalculateMiniMaxDecision(int[,] m)
@@ -143,6 +168,17 @@ public class Camera : MonoBehaviour
         ratiosSum[2] += aiDecision.Chaos;
         isCalculating = false; 
         yield return null;
+    }
+
+    private void DelayedNewGame()
+    {
+        StartCoroutine(DelayedNewGameIE());
+    }
+
+    IEnumerator DelayedNewGameIE()
+    {
+        yield return new WaitForSeconds(0.3f);
+        newGame();
     }
     
     private void newGame()
@@ -188,6 +224,7 @@ public class Camera : MonoBehaviour
                 combined[i, j] = false; //清空是否合并地图组
             }
         old_score = Score; //保存分数用以撤销
+        
         switch (c)
         {
             case 'w':
@@ -200,7 +237,7 @@ public class Camera : MonoBehaviour
                         if (map[i, j] == 0) continue;
                         //往上走 空就继续往上 遇到方块停止 检查目标位置
                         var tar = j;
-                        while (tar - 1 >= 0 && (map[i, tar - 1] == 0 || map[i, tar - 1] == map[i, j] && !combined[i,j]))  tar--;
+                        while (tar - 1 >= 0 && (map[i, tar - 1] == 0 || map[i, tar - 1] == map[i, j] && !combined[i, tar - 1]))  tar--;
                         if(tar==j) continue;
                         //此时tar为目标位置 可以发送移动指令
                         OnMoveUp.Invoke(new[] { i, j ,i, tar}); //前两个是目标数值位置 后两个是其目标位置
@@ -214,7 +251,7 @@ public class Camera : MonoBehaviour
                     {
                         if (map[i, j] == 0) continue;
                         var tar = i;
-                        while (tar - 1 >= 0 && (map[tar-1, j] == 0 || map[tar-1, j] == map[i, j] && !combined[i,j]))  tar--;
+                        while (tar - 1 >= 0 && (map[tar-1, j] == 0 || map[tar-1, j] == map[i, j] && !combined[tar-1, j]))  tar--;
                         if(tar==i) continue;
                         OnMoveUp.Invoke(new[] { i, j ,tar, j});
                     }
@@ -227,7 +264,7 @@ public class Camera : MonoBehaviour
                     {
                         if (map[i, j] == 0) continue;
                         var tar = j;
-                        while (tar + 1 < 4 && (map[i, tar + 1] == 0 || map[i, tar + 1] == map[i, j] && !combined[i,j]))  tar++;
+                        while (tar + 1 < 4 && (map[i, tar + 1] == 0 || map[i, tar + 1] == map[i, j] && !combined[i, tar + 1]))  tar++;
                         if(tar==j) continue;
                         OnMoveUp.Invoke(new[] { i, j ,i, tar});
                     }
@@ -240,7 +277,7 @@ public class Camera : MonoBehaviour
                     {
                         if (map[i, j] == 0) continue;
                         var tar = i;
-                        while (tar + 1 < 4 && (map[tar+1, j] == 0 || map[tar+1, j] == map[i, j] && !combined[i,j]))  tar++;
+                        while (tar + 1 < 4 && (map[tar+1, j] == 0 || map[tar+1, j] == map[i, j] && !combined[tar+1, j]))  tar++;
                         if(tar==i) continue;
                         OnMoveUp.Invoke(new[] { i, j ,tar, j});
                     }
@@ -407,6 +444,7 @@ public class Camera : MonoBehaviour
             if(cnt==0) continue;
             
             GameObject newNum = Instantiate(num);
+            newNum.transform.SetParent(bg);
             var _sc = newNum.GetComponent<Numbers>();
             var tarPos = new int[]{Random.Range(0,4),Random.Range(0,4)};
             do
@@ -859,7 +897,7 @@ public class Camera : MonoBehaviour
     /// <returns></returns>
     private DecisionValues MiniMaxDecision(int[,] nowMap, DecisionValues nowScore, char dir, int depth)
     {
-        if (depth == 6)
+        if (depth == 5)
             return nowScore; //如果已经达到了第x层递归则结束 建议5-6
         if (!can_X(dir, nowMap)) return nowScore; //如果这个方向无法移动则剪枝
         var m = new int[4,4];
@@ -894,6 +932,12 @@ public class Camera : MonoBehaviour
 
     private void revocate()
     {
+        StartCoroutine(revocateIE());
+    }
+
+    IEnumerator revocateIE()
+    {
+        yield return new WaitForSeconds(0.2f);
         //清空地图
         for (var i = 0; i < 4; i++) 
             for (var j = 0; j < 4; j++)
@@ -907,10 +951,23 @@ public class Camera : MonoBehaviour
                 map[i, j] = oldmap[i, j];
                 if(oldmap[i,j]==0) continue;
                 GameObject n = Instantiate(num);
+                n.transform.SetParent(bg);
                 Numbers sc = n.GetComponent<Numbers>();
                 sc.num = oldmap[i, j];
                 sc.pos = new[] { i, j };
-                n.transform.localScale = new Vector3(1, 1, 1);
+                n.transform.localScale = new Vector3(0, 0, 0);
             }
+        canMove = true;
     }
+
+    private void OnApplicationQuit()
+    {
+        for(var i=0; i<4; i++)
+            for(var j=0; j<4; j++)
+                PlayerPrefs.SetInt((i*4+j).ToString(),map[i,j]);
+        PlayerPrefs.SetInt("oldscore",Score);
+        PlayerPrefs.SetInt("highscore",HighestScore);
+        PlayerPrefs.Save();
+    }
+    
 }

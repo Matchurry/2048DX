@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Net.NetworkInformation;
+using System.Threading;
 using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.Timeline;
@@ -16,6 +17,7 @@ public class Arrors : MonoBehaviour
     private Vector3 tarpos;
     void Start()
     {
+        SwipeDetector.OnTouchInput.AddListener(Onmove);
         _sr = gameObject.GetComponent<SpriteRenderer>();
         tarpos = gameObject.transform.position;
         inipos = gameObject.transform.position;
@@ -27,19 +29,10 @@ public class Arrors : MonoBehaviour
         float opaProgress = (Time.time - Opa_startTime) / 0.1f;
         gameObject.transform.position = Vector3.Lerp(gameObject.transform.position, tarpos, progress);
         _sr.color = Color.Lerp(_sr.color, tarColor, opaProgress);
+        
         switch (gameObject.name)
         {
             case "ArrorUp":
-                if (Input.GetKeyDown(KeyCode.W) || Input.GetKeyDown(KeyCode.UpArrow))
-                {
-                    startTime = Time.time;
-                    tarpos = new Vector3(inipos.x, inipos.y+0.25f, inipos.z);
-                }
-                else if (Input.GetKeyUp(KeyCode.W) || Input.GetKeyUp(KeyCode.UpArrow))
-                {
-                    startTime = Time.time;
-                    tarpos = inipos;
-                }
                 if (Camera.can_W())
                 {
                     Opa_startTime = Time.time;
@@ -52,16 +45,6 @@ public class Arrors : MonoBehaviour
                 }
                 break;
             case "ArrorLeft":
-                if (Input.GetKeyDown(KeyCode.A) || Input.GetKeyDown(KeyCode.LeftArrow))
-                {
-                    startTime = Time.time;
-                    tarpos = new Vector3(tarpos.x-0.25f, tarpos.y, tarpos.z);
-                }
-                else if (Input.GetKeyUp(KeyCode.A) || Input.GetKeyUp(KeyCode.LeftArrow))
-                {
-                    startTime = Time.time;
-                    tarpos = inipos;
-                }
                 if (Camera.can_A())
                 {
                     Opa_startTime = Time.time;
@@ -74,16 +57,6 @@ public class Arrors : MonoBehaviour
                 }
                 break;
             case "ArrorDown":
-                if (Input.GetKeyDown(KeyCode.S) || Input.GetKeyDown(KeyCode.DownArrow))
-                {
-                    startTime = Time.time;
-                    tarpos = new Vector3(tarpos.x, tarpos.y-0.25f, tarpos.z);
-                }
-                else if (Input.GetKeyUp(KeyCode.S) || Input.GetKeyUp(KeyCode.DownArrow))
-                {
-                    startTime = Time.time;
-                    tarpos = inipos;
-                }
                 if (Camera.can_S())
                 {
                     Opa_startTime = Time.time;
@@ -96,16 +69,6 @@ public class Arrors : MonoBehaviour
                 }
                 break;
             case "ArrorRight":
-                if (Input.GetKeyDown(KeyCode.D) || Input.GetKeyDown(KeyCode.RightArrow))
-                {
-                    startTime = Time.time;
-                    tarpos = new Vector3(tarpos.x+0.25f, tarpos.y, tarpos.z);
-                }
-                else if (Input.GetKeyUp(KeyCode.D) || Input.GetKeyUp(KeyCode.RightArrow)) 
-                {
-                    startTime = Time.time;
-                    tarpos = inipos;
-                }
                 if (Camera.can_D())
                 {
                     Opa_startTime = Time.time;
@@ -115,6 +78,58 @@ public class Arrors : MonoBehaviour
                 {
                     Opa_startTime = Time.time;
                     tarColor = new Color(tarColor.r, tarColor.g, tarColor.b, 0.25f);
+                }
+                break;
+        }
+    }
+
+    private void Onmove(char c)
+    {
+        StartCoroutine(HandleOnMove(c));
+    }
+
+    IEnumerator HandleOnMove(char c)
+    {
+        switch (gameObject.name)
+        {
+            case "ArrorUp":
+                if (c=='w')
+                {
+                    startTime = Time.time;
+                    tarpos = new Vector3(inipos.x, inipos.y+0.25f, inipos.z);
+                    yield return new WaitForSeconds(0.15f);
+                    startTime = Time.time;
+                    tarpos = inipos;
+                }
+                break;
+            case "ArrorLeft":
+                if (c=='a')
+                {
+                    startTime = Time.time;
+                    tarpos = new Vector3(tarpos.x-0.25f, tarpos.y, tarpos.z);
+                    yield return new WaitForSeconds(0.15f);
+                    startTime = Time.time;
+                    tarpos = inipos;
+                }
+                break;
+            case "ArrorDown":
+                if (c=='s')
+                {
+                    startTime = Time.time;
+                    tarpos = new Vector3(tarpos.x, tarpos.y-0.25f, tarpos.z);
+                    yield return new WaitForSeconds(0.15f);
+                    startTime = Time.time;
+                    tarpos = inipos;
+                }
+                break;
+            case "ArrorRight":
+                if (c=='d')
+                {
+                    startTime = Time.time;
+                    tarpos = new Vector3(tarpos.x+0.25f, tarpos.y, tarpos.z);
+                    yield return new WaitForSeconds(0.15f);
+                    startTime = Time.time;
+                    tarpos = inipos;
                 }
                 break;
         }

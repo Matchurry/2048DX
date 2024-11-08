@@ -1,27 +1,61 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Numerics;
 using TMPro;
+using Unity.VisualScripting;
 using UnityEngine;
 
 public class HighestText : MonoBehaviour
 {
     private TextMeshProUGUI _tm;
+    private float tarSize = 150;
+    private const float MoveAniDuration = 1f;
+    private float startTime;
+    private Color tarC;
+    
     void Start()
     {
         _tm = gameObject.GetComponent<TextMeshProUGUI>();
+        tarC = _tm.color;
+        startTime = Time.time;
+        Numbers.OnDoubleNum.AddListener(Ani);
+        NewGameButton.newGame.AddListener(StartAni);
     }
     
     void Update()
     {
-        _tm.text = Camera.HighestScore.ToString();
-        _tm.text = Camera.HighestScore.ToString();
+        _tm.color = Color.Lerp(_tm.color,tarC,0.05f);
+        float progress = (Time.time - startTime) / MoveAniDuration;
+        _tm.fontSize = Mathf.Lerp(_tm.fontSize, tarSize, progress);
+        if(gameObject.name=="ScoreText")
+            _tm.text = Camera.Score.ToString();
+        else _tm.text = Camera.HighestScore.ToString();
         if (Camera.HighestScore >= 1000)
-            _tm.fontSize = 72;
+            tarSize = 100;
         else if (Camera.HighestScore >= 10000)
-            _tm.fontSize = 56;
+            tarSize = 85;
         else if (Camera.HighestScore >= 100000)
-            _tm.fontSize = 32;
-        else _tm.fontSize = 100;
+            tarSize = 56;
+        else tarSize = 150;
+    }
+
+    private void Ani(int[] args)
+    {
+        if (gameObject.name != "ScoreText" && Camera.Score != Camera.HighestScore) return;
+        _tm.fontSize += 30;
+        startTime = Time.time;
+    }
+
+    private void StartAni()
+    {
+        StartCoroutine(StartAniIE());
+    }
+    
+    IEnumerator StartAniIE()
+    {
+        tarC = new Color(1, 1, 1, 0);
+        yield return new WaitForSeconds(0.5f);
+        tarC = new Color(1, 1, 1, 1);
     }
 }
