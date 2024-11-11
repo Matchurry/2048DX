@@ -35,7 +35,7 @@ public class Camera : MonoBehaviour
             return GetScores + CombineTimes + Chaos;
         }
     
-}
+    }
     
     [FormerlySerializedAs("can_move")] public bool canMove = false;
     public static readonly UnityEvent<int> OnSummonNewNum = new UnityEvent<int>();

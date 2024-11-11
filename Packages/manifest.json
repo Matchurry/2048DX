@@ -40,6 +40,21 @@
     "com.unity.modules.video": "1.0.0",
     "com.unity.modules.vr": "1.0.0",
     "com.unity.modules.wind": "1.0.0",
-    "com.unity.modules.xr": "1.0.0"
-  }
+    "com.unity.modules.xr": "1.0.0",
+    "com.unity.nuget.newtonsoft-json":"3.2.1",
+    "com.google.external-dependency-manager": "1.2.179",
+    "com.github-glitchenzo.nugetforunity": "https://github.com/GlitchEnzo/NuGetForUnity.git?path=/src/NuGetForUnity",
+    "com.taptap.sdk.core":"https://github.com/taptap/TapSDKCore-Unity.git#4.4.3",
+    "com.taptap.sdk.login":"https://github.com/taptap/TapSDKLogin-Unity.git#4.4.3",
+    "com.taptap.sdk.compliance":"https://github.com/taptap/TapSDKCompliance-Unity.git#4.4.3"
+  },
+  "scopedRegistries": [
+      {
+         "name": "package.openupm.com",
+         "url": "https://package.openupm.com",
+         "scopes": [
+            "com.google.external-dependency-manager"
+         ]
+      }
+  ]
 }

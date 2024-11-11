@@ -1,5 +1,47 @@
 {
   "dependencies": {
+    "com.github-glitchenzo.nugetforunity": {
+      "version": "https://github.com/GlitchEnzo/NuGetForUnity.git?path=/src/NuGetForUnity",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {},
+      "hash": "0d0e4af9c79d63224ae26f1a3e822300b1475da7"
+    },
+    "com.google.external-dependency-manager": {
+      "version": "1.2.179",
+      "depth": 0,
+      "source": "registry",
+      "dependencies": {},
+      "url": "https://package.openupm.com"
+    },
+    "com.taptap.sdk.compliance": {
+      "version": "https://github.com/taptap/TapSDKCompliance-Unity.git#4.4.3",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {
+        "com.taptap.sdk.core": "4.4.3",
+        "com.taptap.sdk.login": "4.4.3"
+      },
+      "hash": "74b53e93f0d767c0a4cfd3cf3edc8b92b93a10e4"
+    },
+    "com.taptap.sdk.core": {
+      "version": "https://github.com/taptap/TapSDKCore-Unity.git#4.4.3",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {
+        "com.google.external-dependency-manager": "1.2.179"
+      },
+      "hash": "d8c6926ec5dd89c3e35d2bc59c36de674151aff4"
+    },
+    "com.taptap.sdk.login": {
+      "version": "https://github.com/taptap/TapSDKLogin-Unity.git#4.4.3",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {
+        "com.taptap.sdk.core": "4.4.3"
+      },
+      "hash": "b8400a427c89251f42930a4dad842346c3ad8a72"
+    },
     "com.unity.2d.animation": {
       "version": "7.0.11",
       "depth": 1,
@@ -163,6 +205,13 @@
     "com.unity.mathematics": {
       "version": "1.2.6",
       "depth": 2,
+      "source": "registry",
+      "dependencies": {},
+      "url": "https://packages.unity.cn"
+    },
+    "com.unity.nuget.newtonsoft-json": {
+      "version": "3.2.1",
+      "depth": 0,
       "source": "registry",
       "dependencies": {},
       "url": "https://packages.unity.cn"
