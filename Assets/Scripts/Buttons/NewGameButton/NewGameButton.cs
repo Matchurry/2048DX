@@ -29,7 +29,7 @@ public class NewGameButton : MonoBehaviour
         transform.rotation = Quaternion.Euler(0, Mathf.Lerp(transform.rotation.eulerAngles.y, tarR_Y, 0.05f), 0);
         transform.position = Vector3.Lerp(transform.position, tarpos, 0.1f);
         if(Destory.IsDestroying || Drag.IsDraging)
-            _sr.color = new Color(0.5490196f, 0.5137255f, 0.5137255f, 0.5f);
+            _sr.color = new Color(_sr.color.r, _sr.color.g, _sr.color.b, 0.5f);
     }
 
     void HandbleAiAct()
@@ -44,14 +44,14 @@ public class NewGameButton : MonoBehaviour
 
     private void OnMouseDown()
     {
-        _sr.color = new Color(0.5490196f, 0.5137255f, 0.5137255f, 0.5f);
+        _sr.color = new Color(_sr.color.r, _sr.color.g, _sr.color.b, 0.5f);
         if(!Destory.IsDestroying && !Drag.IsDraging)
             newGame.Invoke();
     }
 
     private void OnMouseUp()
     {
-        _sr.color = new Color(0.5490196f, 0.5137255f, 0.5137255f, 1);
+        _sr.color = new Color(_sr.color.r, _sr.color.g, _sr.color.b, 1);
     }
 
     private void newGameAni()

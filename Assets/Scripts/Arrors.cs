@@ -8,19 +8,25 @@ using UnityEngine.Timeline;
 
 public class Arrors : MonoBehaviour
 {
+    public Config config;
+    private ThemeSo _theme;
     private SpriteRenderer _sr;
     private const float MoveAniDuration = 0.5f;
     private float startTime = 0f;
     private float Opa_startTime = 0f;
-    private Color tarColor = new Color(0.4433962f, 0.3990566f, 0.3990566f, 0.5f);
+    private Color tarColor;
     private Vector3 inipos;
     private Vector3 tarpos;
     void Start()
     {
+        HandleThemeSwitch(0);
         SwipeDetector.OnTouchInput.AddListener(Onmove);
+        ThemeUnit.OnThemeSwitch.AddListener(HandleThemeSwitch);
         _sr = gameObject.GetComponent<SpriteRenderer>();
         tarpos = gameObject.transform.position;
         inipos = gameObject.transform.position;
+        _sr.color = _theme.themeArrowColor;
+
     }
     
     void Update()
@@ -133,5 +139,11 @@ public class Arrors : MonoBehaviour
                 }
                 break;
         }
+    }
+    
+    void HandleThemeSwitch(int args)
+    {
+        _theme = config.themes[config.themeIndex];
+        tarColor = _theme.themeArrowColor;
     }
 }

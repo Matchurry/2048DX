@@ -5,28 +5,31 @@ using UnityEngine.Events;
 
 public class SwipeDetector : MonoBehaviour
 {
-    private Vector2 startTouch;
-    private Vector2 endTouch;
-    private float swipeThreshold = 50f; //滑动阈值，根据需要调整
+    private Vector2 _startTouch;
+    private Vector2 _endTouch;
+    private readonly float _swipeThreshold = 50f; //滑动阈值，根据需要调整
     public static readonly UnityEvent<char> OnTouchInput = new UnityEvent<char>();
+    private bool _validTouch = true;
 
     void Update()
     {
         if (Input.touchCount > 0 && !Destory.IsDestroying && !Drag.IsDraging)
         {
-            Touch touch = Input.GetTouch(0);
-
+            var touch = Input.GetTouch(0);
             if (touch.phase == TouchPhase.Began)
             {
-                startTouch = touch.position;
+                _startTouch = touch.position;
+                _validTouch = true;
+                if (_startTouch.y is >= 1870f or <= 275f) _validTouch = false;
             }
             else if (touch.phase == TouchPhase.Ended)
             {
-                endTouch = touch.position;
-                float deltaX = endTouch.x - startTouch.x;
-                float deltaY = endTouch.y - startTouch.y;
+                if(!_validTouch) return;
+                _endTouch = touch.position;
+                float deltaX = _endTouch.x - _startTouch.x;
+                float deltaY = _endTouch.y - _startTouch.y;
 
-                if (Mathf.Abs(deltaX) > Mathf.Abs(deltaY) && Mathf.Abs(deltaX) > swipeThreshold)
+                if (Mathf.Abs(deltaX) > Mathf.Abs(deltaY) && Mathf.Abs(deltaX) > _swipeThreshold)
                 {
                     if (deltaX > 0)
                     {
@@ -37,7 +40,7 @@ public class SwipeDetector : MonoBehaviour
                         OnTouchInput.Invoke('a');
                     }
                 }
-                else if (Mathf.Abs(deltaY) > Mathf.Abs(deltaX) && Mathf.Abs(deltaY) > swipeThreshold)
+                else if (Mathf.Abs(deltaY) > Mathf.Abs(deltaX) && Mathf.Abs(deltaY) > _swipeThreshold)
                 {
                     if (deltaY > 0)
                     {
@@ -48,8 +51,8 @@ public class SwipeDetector : MonoBehaviour
                         OnTouchInput.Invoke('s');
                     }
                 }
-                startTouch = Vector2.zero;
-                endTouch = Vector2.zero;
+                _startTouch = Vector2.zero;
+                _endTouch = Vector2.zero;
             }
         }
     }

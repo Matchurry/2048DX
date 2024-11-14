@@ -1,8 +1,6 @@
 using System;
 using System.Collections;
-using System.Collections.Generic;
 using Lofelt.NiceVibrations;
-using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -10,23 +8,32 @@ public class Numbers : MonoBehaviour
 {
     public static readonly UnityEvent<int[]> OnDoubleNum = new UnityEvent<int[]>();
     private static readonly UnityEvent<int[]> OnPureMove = new UnityEvent<int[]>();
+    public Config config;
+    private ThemeSo _colorTheme;
+    public GameObject numBg;
+    private GameObject _selfBg;
+    private SpriteRenderer _selfBgSr;
     private SpriteRenderer _sr;
-    private float[] Unitmov = new float[] { -1.8f/1.22f, -0.6f/1.22f, 0.6f/1.22f, 1.8f/1.22f };
-    public Sprite[] nums_st;
+    private readonly float[] _unitmov = new float[] { -1.8f/1.22f, -0.6f/1.22f, 0.6f/1.22f, 1.8f/1.22f };
+    public Sprite[] numsSt;
     public int num = -1;
     public int[] pos = new int[] { -9, 0 };
-    private Vector3 tarScale = new Vector3(0.65f,0.65f,0.65f);
-    private Vector3 tarpos = new Vector2();
+    private Vector3 _tarScale = new Vector3(0.65f,0.65f,0.65f);
+    private Vector3 _tarpos = new Vector2();
     private const float MoveAniDuration = 0.5f;
-    private bool beDraging = false;
+    private bool _beDraging = false;
     
     void Start()
     {
         _sr = gameObject.GetComponent<SpriteRenderer>();
         while (num == -1 && pos[0] != -9) {;}
-        
-        gameObject.transform.position = new Vector2(Unitmov[pos[0]], Unitmov[3-pos[1]]);
-        _sr.sprite = nums_st[(int)Math.Log(num, 2) - 1];
+        _colorTheme = config.themes[config.themeIndex];
+        _sr.color = _colorTheme.themeNumFontColors[Mathf.Min(2, (int)Math.Log(num, 2) - 1)];
+        _selfBg = Instantiate(numBg,gameObject.transform);
+        _selfBgSr = _selfBg.GetComponent<SpriteRenderer>();
+        _selfBgSr.color = _colorTheme.themeNumBgColors[(int)Math.Log(num, 2) - 1];
+        gameObject.transform.position = new Vector2(_unitmov[pos[0]], _unitmov[3-pos[1]]);
+        _sr.sprite = numsSt[(int)Math.Log(num, 2) - 1];
         Camera.OnMoveUp.AddListener(Move);
         OnDoubleNum.AddListener(DoubleNum);
         OnPureMove.AddListener(HandlePureMove);
@@ -34,6 +41,7 @@ public class Numbers : MonoBehaviour
         Revocate.revocate.AddListener(newGame);
         Destory.OnEndDestory.AddListener(HandleEndDestory);
         Drag.OnEndDrag.AddListener(HandleEndDestory);
+        ThemeUnit.OnThemeSwitch.AddListener(HandleThemeSwitch);
     }
 
     void Update()
@@ -42,41 +50,42 @@ public class Numbers : MonoBehaviour
                                                                       Mathf.Sin(Time.time*20)*0.05f,transform.rotation.w);
         if (!Drag.IsDraging)
         {
-            tarpos = new Vector2(Unitmov[pos[0]], Unitmov[3 - pos[1]]);
+            _tarpos = new Vector2(_unitmov[pos[0]], _unitmov[3 - pos[1]]);
             transform.position =
-                Vector2.Lerp(transform.position,tarpos, 0.25f);
+                Vector2.Lerp(transform.position,_tarpos, 0.25f);
         }
         else
         {
             transform.position =
-                Vector2.Lerp(transform.position,tarpos, 0.35f);
+                Vector2.Lerp(transform.position,_tarpos, 0.35f);
         }
         
         transform.localScale =
-            Vector3.Lerp(transform.localScale, tarScale, 0.25f);
+            Vector3.Lerp(transform.localScale, _tarScale, 0.25f);
 
-        if (beDraging && Input.touchCount > 0)
+        if (_beDraging && Input.touchCount > 0)
         {
             Touch touch = Input.GetTouch(0);
             if (touch.phase == TouchPhase.Ended)
             {
                 var endpos = UnityEngine.Camera.main.ScreenToWorldPoint(touch.position);
                 var tarunitpos = new int[] { 0, 3 };
-                if (endpos.x < Unitmov[0] - 0.5 || endpos.x > Unitmov[3] + 0.5 || endpos.y < Unitmov[0] - 0.5 ||
-                    endpos.y > Unitmov[3] + 0.5)
+                if (endpos.x < _unitmov[0] - 0.5 || endpos.x > _unitmov[3] + 0.5 || endpos.y < _unitmov[0] - 0.5 ||
+                    endpos.y > _unitmov[3] + 0.5)
                 {
                     //在此结束Drag
-                    beDraging = false;
+                    _beDraging = false;
                     Drag.IsDraging = false;
-                    _sr.sortingOrder--;
+                    _sr.sortingOrder = 2;
+                    _selfBgSr.sortingOrder = 1;
                     Drag.OnEndDrag.Invoke();
                     return;
                 }
                 for (var i = 0; i < 3; i++)
                 {
-                    if (endpos.x >= Unitmov[i] + 0.5f)
+                    if (endpos.x >= _unitmov[i] + 0.5f)
                         tarunitpos[0]++;
-                    if (endpos.y >= Unitmov[i] + 0.5f)
+                    if (endpos.y >= _unitmov[i] + 0.5f)
                         tarunitpos[1]--;
                 }
                 //Debug.Log(tarunitpos[0]+" "+tarunitpos[1]);
@@ -109,8 +118,9 @@ public class Numbers : MonoBehaviour
                     pos = tarunitpos;
                 }
                 Drag.IsDraging = false;
-                beDraging = false;
-                _sr.sortingOrder--;
+                _beDraging = false;
+                _sr.sortingOrder = 3;
+                _selfBgSr.sortingOrder = 2;
                 Drag.OnEndDrag.Invoke();
             }
         }
@@ -154,7 +164,9 @@ public class Numbers : MonoBehaviour
             transform.localScale = new Vector3(1f, 1f, 1f);
             num *= 2;
             if (num == 2048) Camera.winRounds++;
-            _sr.sprite = nums_st[(int)Math.Log(num, 2) - 1];
+            _sr.sprite = numsSt[(int)Math.Log(num, 2) - 1];
+            _sr.color = _colorTheme.themeNumFontColors[Mathf.Min(2, (int)Math.Log(num, 2) - 1)];
+            _selfBg.GetComponent<SpriteRenderer>().color = _colorTheme.themeNumBgColors[(int)Math.Log(num, 2) - 1];
         }
     }
     /// <summary>
@@ -183,7 +195,7 @@ public class Numbers : MonoBehaviour
         {
             if(Shake.can_shake)
                 HapticPatterns.PlayPreset(HapticPatterns.PresetType.LightImpact);
-            tarScale = new Vector3(0, 0, 0);
+            _tarScale = new Vector3(0, 0, 0);
             Camera.map[pos[0], pos[1]] = 0;
             StartCoroutine(WaitAndDestory());
             Destory.OnEndDestory.Invoke();
@@ -195,15 +207,17 @@ public class Numbers : MonoBehaviour
     {
         if (Drag.IsDraging && !Drag.Draging)
         {
-            _sr.sortingOrder = 3;
+            _sr.sortingOrder = 4;
+            _selfBgSr.sortingOrder = 3;
+            Camera.map[pos[0], pos[1]] = 0;
             Drag.Draging = true;
-            beDraging = true;
+            _beDraging = true;
             Drag.OnEndDrag.Invoke();
         }
-        if (beDraging)
+        if (_beDraging)
         {
             var pos = UnityEngine.Camera.main.ScreenToWorldPoint(Input.GetTouch(0).position);
-            tarpos = new Vector3(pos.x, pos.y, 0);
+            _tarpos = new Vector3(pos.x, pos.y, 0);
         }
     }
 
@@ -222,5 +236,12 @@ public class Numbers : MonoBehaviour
                     cnt++;
         if(cnt==16) NewGameButton.newGame.Invoke();
         Destroy(gameObject);
+    }
+    
+    void HandleThemeSwitch(int args)
+    {
+        _colorTheme = config.themes[config.themeIndex];
+        _sr.color = _colorTheme.themeNumFontColors[Mathf.Min(2, (int)Math.Log(num, 2) - 1)];
+        _selfBgSr.color = _colorTheme.themeNumBgColors[(int)Math.Log(num, 2) - 1];
     }
 }

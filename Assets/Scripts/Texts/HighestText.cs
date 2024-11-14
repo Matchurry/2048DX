@@ -21,11 +21,12 @@ public class HighestText : MonoBehaviour
         startTime = Time.time;
         Numbers.OnDoubleNum.AddListener(Ani);
         NewGameButton.newGame.AddListener(StartAni);
+        SettingsCornerUI.OnSetting.AddListener(SettingAni);
     }
     
     void Update()
     {
-        _tm.color = Color.Lerp(_tm.color,tarC,0.05f);
+        _tm.color = Color.Lerp(_tm.color,tarC,0.15f);
         float progress = (Time.time - startTime) / MoveAniDuration;
         _tm.fontSize = Mathf.Lerp(_tm.fontSize, tarSize, progress);
         if(gameObject.name=="ScoreText")
@@ -36,7 +37,7 @@ public class HighestText : MonoBehaviour
         else if (Camera.HighestScore >= 10000)
             tarSize = 85;
         else if (Camera.HighestScore >= 100000)
-            tarSize = 56;
+            tarSize = 45;
         else tarSize = 150;
     }
 
@@ -50,6 +51,14 @@ public class HighestText : MonoBehaviour
     private void StartAni()
     {
         StartCoroutine(StartAniIE());
+    }
+
+    private void SettingAni()
+    {
+        if(SettingsCornerUI.SettingsFramework)
+            tarC = new Color(1, 1, 1, 0);
+        else
+            tarC = new Color(1, 1, 1, 1);
     }
     
     IEnumerator StartAniIE()

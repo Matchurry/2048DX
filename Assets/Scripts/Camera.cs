@@ -43,6 +43,8 @@ public class Camera : MonoBehaviour
     public static readonly UnityEvent<int[]> OnMoveLeft = new UnityEvent<int[]>();
     public static readonly UnityEvent<int[]> OnMoveDown = new UnityEvent<int[]>();
     public static readonly UnityEvent<int[]> OnMoveRight = new UnityEvent<int[]>();
+    public Config config;
+    private ThemeSo _theme;
     public GameObject num;
     public Transform bg;
     public static int[,] map = new int[4, 4];
@@ -78,12 +80,16 @@ public class Camera : MonoBehaviour
 
     void Start()
     {
+        _theme = config.themes[config.themeIndex];
+        GetComponent<UnityEngine.Camera>().backgroundColor = _theme.themeBackGroundColor;
         Application.targetFrameRate = 120;
         QualitySettings.vSyncCount = 1;
         OnSummonNewNum.AddListener(SummonNum);
         NewGameButton.newGame.AddListener(DelayedNewGame);
         Revocate.revocate.AddListener(revocate);
         SwipeDetector.OnTouchInput.AddListener(handletouch);
+        ThemeUnit.OnThemeSwitch.AddListener(HandleThemeSwitch);
+        Star.StarSave.AddListener(OnApplicationQuit);
         if (isSaved) revocate();
         else newGame();
     }
@@ -965,9 +971,15 @@ public class Camera : MonoBehaviour
         for(var i=0; i<4; i++)
             for(var j=0; j<4; j++)
                 PlayerPrefs.SetInt((i*4+j).ToString(),map[i,j]);
-        PlayerPrefs.SetInt("oldscore",Score);
-        PlayerPrefs.SetInt("highscore",HighestScore);
+        PlayerPrefs.SetInt("oldscore", Score);
+        PlayerPrefs.SetInt("highscore", HighestScore);
+        PlayerPrefs.SetInt("Cheated", Star.Cheated ? 1 : 0);
         PlayerPrefs.Save();
     }
     
+    void HandleThemeSwitch(int args)
+    {
+        _theme = config.themes[config.themeIndex];
+        GetComponent<UnityEngine.Camera>().backgroundColor = _theme.themeBackGroundColor;
+    }
 }

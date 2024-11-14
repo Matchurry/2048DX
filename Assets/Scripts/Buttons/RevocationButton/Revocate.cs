@@ -21,6 +21,7 @@ public class Revocate : MonoBehaviour
         revocate.AddListener(RevocateAni);
         Destory.OnEndDestory.AddListener(OnMouseUp);
         Drag.OnEndDrag.AddListener(OnMouseUp);
+        Toggle.OnCheatChg.AddListener(HandleChearChg);
     }
     
     void Update()
@@ -28,8 +29,17 @@ public class Revocate : MonoBehaviour
         transform.rotation = Quaternion.Euler(0, Mathf.Lerp(transform.rotation.eulerAngles.y, tarR_Y, 0.05f), 0);
         transform.position = Vector3.Lerp(transform.position, tarpos, 0.1f);
         if(Destory.IsDestroying || Drag.IsDraging)
-            _sr.color = new Color(0.5490196f, 0.5137255f, 0.5137255f, 0.5f);
+            _sr.color = new Color(_sr.color.r, _sr.color.g, _sr.color.b, 0.5f);
     }
+
+    void HandleChearChg()
+    {
+        if(Toggle.Cheat)
+            tarpos = new Vector3(inipos.x, inipos.y, inipos.z);
+        else
+            tarpos = new Vector3(inipos.x, inipos.y - 1, inipos.z);
+    }
+    
     void HandbleAiAct()
     {
         tarpos = new Vector3(inipos.x - 2, inipos.y, inipos.z);
@@ -42,14 +52,14 @@ public class Revocate : MonoBehaviour
 
     private void OnMouseDown()
     {
-        _sr.color = new Color(0.5490196f, 0.5137255f, 0.5137255f, 0.5f);
+        _sr.color = new Color(_sr.color.r, _sr.color.g, _sr.color.b, 0.5f);
         if(Camera.round!=1 && !Destory.IsDestroying && !Drag.IsDraging)
             revocate.Invoke();
     }
 
     private void OnMouseUp()
     {
-        _sr.color = new Color(0.5490196f, 0.5137255f, 0.5137255f, 1);
+        _sr.color = new Color(_sr.color.r, _sr.color.g, _sr.color.b, 1);
     }
 
     private void RevocateAni()
